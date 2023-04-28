@@ -2,7 +2,6 @@
 use crate::dependency::analysis::{Action, Type, Output, analysis_cli};
 use clap::{arg, command, value_parser, ArgAction, Command, ArgGroup, builder::ValueParser};
 
-
 mod frontend;
 mod algorithm;
 mod dependency;

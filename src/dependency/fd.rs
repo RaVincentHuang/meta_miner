@@ -14,6 +14,18 @@ pub struct FunctionalDependency {
     dependant: Attribute
 }
 
+struct Foo;
+
+trait MyTrait {
+    fn foo() -> usize {
+        return 0;
+    }
+}
+
+impl MyTrait for Foo {
+
+}
+
 impl FunctionalDependency {
     pub fn new_from_vec(attr_vec: Vec<Attribute>) -> FunctionalDependency {
         let mut dependant = Attribute {value: "".to_string(), rank: 0};
@@ -35,6 +47,7 @@ impl FunctionalDependency {
         let determinant = Attributes(group);
 
         FunctionalDependency { determinant, dependant }
+
     }
 
     pub fn distance(fd1: &Self, fd2: &Self, delta1: f64, delta2: f64, delta3: f64) -> f64 {
@@ -179,7 +192,7 @@ impl FDs {
 
 impl AlgorithmResult for FDs {
     fn dispaly(&self) {
-        println!("We have funtional dependency set of the table {}:", self.table_name);
+        println!("We have functional dependency set of the table {}:", self.table_name);
         for fd in self.fds.iter() {
             print!("{};\t", fd);
         }

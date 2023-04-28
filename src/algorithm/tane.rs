@@ -38,7 +38,7 @@ impl Algorithm for Tane {
         let mut level0 = HashMap::<BitSet, Combiantion>::new();
         let mut level1 = HashMap::<BitSet, Combiantion>::new();
 
-        let mut level0_bitset: BitSet = (1..=attri_num).collect();
+        let level0_bitset: BitSet = (1..=attri_num).collect();
 
         let level0_sp = StrippedPartition::new(attri_num);
         level0.insert(BitSet::new(), Combiantion {
@@ -51,7 +51,7 @@ impl Algorithm for Tane {
             let mut level1_key = BitSet::new();
             level1_key.insert(index + 1);
 
-            let mut level1_bitset: BitSet = (1..=attri_num).collect();
+            let level1_bitset: BitSet = (1..=attri_num).collect();
 
             let level1_sp = partitions.0.get(attri).unwrap();
 

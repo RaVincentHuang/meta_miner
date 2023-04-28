@@ -62,14 +62,14 @@ impl Drop for FDs {
 
         log::debug!("Save: {}", s);
 
-        let mut f = OpenOptions::new()
+        let f = OpenOptions::new()
             .write(true).truncate(true)
             .open(filepath).unwrap();
 
-        f.write(s.as_bytes()).unwrap();
+        let mut wirter = BufWriter::new(f);
 
-        // let mut writer = BufWriter::new(f);
-        // writer.write(s.as_bytes()).unwrap();
+        wirter.write(s.as_bytes()).unwrap();
+
     }
 }
 
@@ -98,9 +98,10 @@ pub fn analysis_cli(action: Action, fd_type: Type, n: usize, r: f64) {
 
         Action::Add | Action::Single => {
             let mut fd_str = String::new();
+            println!("Please input the fd as format of (name, index)* -> (name, index)");
             stdin().read_line(&mut fd_str).unwrap();
 
-            println!("Get str {}", fd_str);
+            log::info!("Get str {}", fd_str);
 
             lazy_static!{
                 static ref REGEX: Regex = Regex::new(
