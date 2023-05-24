@@ -13,6 +13,9 @@ fn main() {
                 .arg(arg!(-a --add <ADD> "Add the fds")
                         .action(ArgAction::SetTrue)
                         .requires("type"))
+                .arg(arg!(-l --load <LOAD> "load from file")
+                        .action(ArgAction::SetTrue)
+                        .requires("type"))
                 .arg(arg!(-d --display <DISPLAY> "Display the analysis of all the new fds")
                         .action(ArgAction::SetTrue)
                         .requires("number")
@@ -27,13 +30,15 @@ fn main() {
                 .arg(arg!(--current <CURRENT> "Current display")
                         .action(ArgAction::SetTrue)
                         .requires("type"))
+                .arg(arg!(--attributes <Attributes>)
+                        .action(ArgAction::SetTrue))
                 .group(ArgGroup::new("actions")
                         .required(true)
                         .multiple(false)
-                        .args(["add", "display", "clear", "single", "current"]))
+                        .args(["add", "display", "clear", "single", "current", "attributes", "load"]))
                 
                 .arg(arg!(-t --type [TYPE] "fd type")
-                        .value_parser(["mined", "new"])
+                        .value_parser(["mined", "new", "attributes"])
                         .default_value("mined"))
                 
                 .arg(arg!(-o  --output [OUTPUT])
@@ -57,12 +62,16 @@ fn main() {
             let action = {
                 if sub_cmd.get_flag("add") {
                     Action::Add
+                } else if sub_cmd.get_flag("load") {
+                    Action::Load
                 } else if sub_cmd.get_flag("display") {
                     Action::Display
                 } else if sub_cmd.get_flag("clear") {
                     Action::Clear
                 } else if sub_cmd.get_flag("single") {
                     Action::Single
+                } else if sub_cmd.get_flag("attributes") {
+                    Action::Attributes
                 } else if sub_cmd.get_flag("current") {
                     Action::Current
                 } 
@@ -75,6 +84,7 @@ fn main() {
                     match matches.as_str() {
                         "mined" => Type::Mined,
                         "new" => Type::New,
+                        "attributes" => Type::Attributes,
                         _ => unreachable!()
                     }
                 } else {

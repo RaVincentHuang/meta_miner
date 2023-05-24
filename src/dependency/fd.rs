@@ -6,24 +6,12 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-struct Attributes(Vec<Attribute>);
+pub struct Attributes(pub Vec<Attribute>);
 
 #[derive(Deserialize, Serialize)]
 pub struct FunctionalDependency {
     determinant: Attributes,
     dependant: Attribute
-}
-
-struct Foo;
-
-trait MyTrait {
-    fn foo() -> usize {
-        return 0;
-    }
-}
-
-impl MyTrait for Foo {
-
 }
 
 impl FunctionalDependency {
@@ -191,7 +179,7 @@ impl FDs {
 }
 
 impl AlgorithmResult for FDs {
-    fn dispaly(&self) {
+    fn display(&self) {
         println!("We have functional dependency set of the table {}:", self.table_name);
         for fd in self.fds.iter() {
             print!("{};\t", fd);
