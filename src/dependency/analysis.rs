@@ -468,6 +468,12 @@ fn analysis_new_and_output(n: usize, r: f64) {
     });
 }
 
+pub fn analysis_algorithm_one_and_output(fd: &crate::dependency::fd::FunctionalDependency, n: usize) {
+    let (determinant, dependant) = fd.disintegrate();
+    let new_fd = FD::new_from_vec(determinant, dependant);
+    analysis_one_and_output(&new_fd, n, 4.2);
+}
+
 fn analysis_one_and_output(fd: &FD, n: usize, r: f64) {
     let mined = FDs::mined();
 
@@ -477,7 +483,5 @@ fn analysis_one_and_output(fd: &FD, n: usize, r: f64) {
         FD::distance_std(fd, fd2, n) < r            
     }).collect::<Vec<_>>().len();
     
-    println!("fd: {} has N: {}, MN: {}, error: %{}", fd,  N, NM, (NM as f64) / (N as f64) * 100.0);
-
-
+    println!("FD: {} has N: {}, MN: {}, error: %{}", fd,  N, NM, (NM as f64) / (N as f64) * 100.0);
 }

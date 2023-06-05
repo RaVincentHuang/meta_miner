@@ -1,5 +1,5 @@
 
-use std::{rc::Rc, fmt::Display};
+use std::{rc::Rc, fmt::Display, collections::HashSet};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -21,6 +21,32 @@ impl Table {
     pub fn add_entry(&mut self, data: Vec<String>) {
         let entry = Entry::new(Rc::clone(&self.attributes), data);
         self.entries.push(entry);
+    }
+
+    pub fn sub_table(&self, node: &HashSet<usize>) -> Table {
+        let table_name = self.table_name.clone();
+        let attributes = Rc::clone(&self.attributes);
+        let entries: Vec<_> = node.iter().map(|idx| {
+            let entry = self.entries.get(*idx).unwrap();
+            Entry { attr_ref: Rc::clone(&entry.attr_ref), data: entry.data.clone()}
+        }).collect();
+
+        Table { table_name, attributes, entries}
+    }
+}
+
+impl Display for Table {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut res = String::new();
+        res += format!("name: {}\n", self.table_name).as_str();
+        for attri in self.attributes.iter() {
+            res += format!("{:<15}", attri.value).as_str();
+        }
+        res += "\n";
+        for entry in self.entries.iter() {
+            res += format!("{}\n", entry).as_str();
+        }
+        write!(f, "{}", res)
     }
 }
 
@@ -63,5 +89,14 @@ impl Entry {
         }
 
         None
+    }
+}
+impl Display for Entry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut res = String::new();
+        for item in self.data.iter() {
+            res += format!("{:<15}", item).as_str();
+        }
+        write!(f, "{}", res)
     }
 }

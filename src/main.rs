@@ -1,6 +1,14 @@
 #![feature(iter_intersperse)]
+use std::collections::HashSet;
+
 use crate::dependency::analysis::{Action, Type, Output, analysis_cli};
+use crate::algorithm::cluster;
+use crate::algorithm::tane::Tane;
+use crate::frontend::parser;
+use crate::frontend::table::Table;
+use algorithm::Algorithm;
 use clap::{arg, command, value_parser, ArgAction, Command, ArgGroup, builder::ValueParser};
+use serde::{Deserialize,Serialize};
 
 mod frontend;
 mod algorithm;
@@ -48,9 +56,13 @@ fn main() {
                 .arg(arg!(-n --number [NUM]  "The number of attributes in the table")
                         .value_parser(value_parser!(usize)))
                 .arg(arg!(-r --rate [RATE]  "The error rate")
-                        .value_parser(value_parser!(f64)))
-
-
+                        .value_parser(value_parser!(f64)))      
+        ).subcommand(
+            command!("execute")
+                .arg(arg!(-i --input <INPUT> "Input files")
+                    .value_parser(value_parser!(String))
+                    .action(ArgAction::Set))
+                    
                 
         ).get_matches();
     
@@ -105,6 +117,23 @@ fn main() {
 
             analysis_cli(action, fd_type, n, r);
 
+        }
+        Some(("execute", sub_cmd)) => {
+            if let Some(path) = sub_cmd.get_one::<String>("input") {
+                let table = parser::load_from_file(path).unwrap();
+                println!("{}", table);
+                let nodes = cluster::clustering(&table);
+
+                let mut tane = Tane::new();
+                for node in nodes {
+                    let sub_table = table.sub_table(&node);
+                    let res = tane.execute(&sub_table);
+                    println!("sub table of {}", sub_table);
+                    res.display();
+                }
+                // let res = tane.execute(table);
+                // res.display();
+            }
         }
         _ => {
             log::warn!("Nothing to do")

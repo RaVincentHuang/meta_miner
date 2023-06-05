@@ -5,12 +5,12 @@ use regex::Regex;
 use crate::frontend::table::{Table, Attribute};
 use std::io::{Error};
 
-fn load_from_file(filename: &str) -> Result<Table, Error> {
+pub fn load_from_file(filename: &str) -> Result<Table, Error> {
     let mut reader = Reader::from_path(filename)?;
 
     let header = reader.headers()?;
 
-    let re = Regex::new(r"(\P<n>*).csv").unwrap();
+    let re = Regex::new(r"(?P<n>).csv").unwrap();
     let table_name = re.replace(filename, "$n").to_string();
 
     let mut metadata = Vec::new();

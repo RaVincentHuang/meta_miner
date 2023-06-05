@@ -1,5 +1,6 @@
 use crate::frontend::table::{Attribute, Table};
 use crate::dependency::result::AlgorithmResult;
+use crate::dependency::analysis::analysis_algorithm_one_and_output;
 use bit_set::BitSet;
 use std::fmt::{Display, Formatter};
 use std::rc::Rc;
@@ -15,6 +16,10 @@ pub struct FunctionalDependency {
 }
 
 impl FunctionalDependency {
+    pub fn disintegrate(&self) -> (Vec<Attribute>, Vec<Attribute>) {
+        (self.determinant.0.clone(), vec![self.dependant.clone()])
+    }
+
     pub fn new_from_vec(attr_vec: Vec<Attribute>) -> FunctionalDependency {
         let mut dependant = Attribute {value: "".to_string(), rank: 0};
         
@@ -155,6 +160,7 @@ impl FDs {
         let dependant = self.attributes.get(a).unwrap().clone();
 
         let fd = FunctionalDependency {determinant, dependant};
+        // println!("FD: {}", fd);
 
         self.add(fd);
     }
@@ -181,8 +187,11 @@ impl FDs {
 impl AlgorithmResult for FDs {
     fn display(&self) {
         println!("We have functional dependency set of the table {}:", self.table_name);
+        let mut cnt = 0;
         for fd in self.fds.iter() {
-            print!("{};\t", fd);
+            // println!("FD{}: {};",cnt, fd);
+            analysis_algorithm_one_and_output(fd, self.attributes.len());
+            cnt += 1;
         }
     }
 

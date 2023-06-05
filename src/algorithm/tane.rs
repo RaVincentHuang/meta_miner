@@ -1,4 +1,3 @@
-
 use crate::algorithm::Algorithm;
 use crate::frontend::partition::{Partitions, StrippedPartition};
 use crate::frontend::table::Table;
@@ -9,8 +8,9 @@ use bit_set::BitSet;
 use std::collections::HashMap;
 
 use std::cell::RefCell;
-struct Tane;
+pub struct Tane;
 
+#[derive(Debug)]
 struct Combiantion {
     pub rhs: BitSet,
     pub partition: StrippedPartition,
@@ -27,26 +27,33 @@ impl Combiantion {
     }
 }
 
+impl Tane {
+    pub fn new() -> Tane {
+        Tane {}
+    }
+}
+
 impl Algorithm for Tane {
-    fn execute(&mut self, table: Table) -> Box<dyn AlgorithmResult> {
+    fn execute(&mut self, table: &Table) -> Box<dyn AlgorithmResult> {
         let mut res = FDs::new(&table);
 
         let partitions = Partitions::new(&table);
-
         let attri_num = table.attributes.len();
 
         let mut level0 = HashMap::<BitSet, Combiantion>::new();
         let mut level1 = HashMap::<BitSet, Combiantion>::new();
 
+        // initial level0
         let level0_bitset: BitSet = (1..=attri_num).collect();
 
-        let level0_sp = StrippedPartition::new(attri_num);
+        let level0_sp: StrippedPartition = StrippedPartition::new(attri_num);
         level0.insert(BitSet::new(), Combiantion {
             rhs: level0_bitset,
             partition: level0_sp,
             valid: true
         });
 
+        // initial level1
         for (index, attri) in table.attributes.iter().enumerate() {
             let mut level1_key = BitSet::new();
             level1_key.insert(index + 1);
@@ -54,20 +61,36 @@ impl Algorithm for Tane {
             let level1_bitset: BitSet = (1..=attri_num).collect();
 
             let level1_sp = partitions.0.get(attri).unwrap();
+            // println!("Attribute: {} <--> sp: {:?}", attri, level1_sp);
 
             level1.insert(level1_key, Combiantion {
                 rhs: level1_bitset,
                 partition: level1_sp.clone(),
                 valid: true
             });
+        }
 
-            let mut l = 1;
-            while !level1.is_empty() && l <= attri_num {
-                compute_dependencies(&mut level0, &mut level1, attri_num, &mut res);
-                level1 = prune(level1, attri_num, &mut res);
-                (level0, level1) = generate_next_level(level1);
-                l += 1;
-            }
+        // for i in 0..(attri_num - 1) {
+        //     for j in (i + 1)..attri_num {
+        //         let attri_i = &table.attributes[i];
+        //         let attri_j = &table.attributes[j];
+        //         let mut key_i = BitSet::new();
+        //         key_i.insert(i + 1);
+        //         let mut key_j = BitSet::new();
+        //         key_j.insert(j + 1);
+        //         let sp_i = &level1.get(&key_i).unwrap().partition;
+        //         let sp_j = &level1.get(&key_j).unwrap().partition;
+        //         println!("Attribute: {} * {} <--> {:?} ", attri_i, attri_j, sp_i * sp_j);
+        //         println!("Attribute: {} * {} <--> {:?} ", attri_j, attri_i, sp_j * sp_i);
+        //     }
+        // }
+
+        let mut l = 1;
+        while !level1.is_empty() && l <= attri_num {
+            compute_dependencies(&mut level0, &mut level1, attri_num, &mut res);
+            level1 = prune(level1, attri_num, &mut res);
+            (level0, level1) = generate_next_level(level1);
+            l += 1;
         }
 
         Box::new(res)
@@ -84,6 +107,7 @@ fn initial_c_plus_for_level(level0: &mut HashMap::<BitSet, Combiantion>, level1:
             let ref Cx_without_a = level0.get(&X_clone).unwrap().rhs;
 
             Cx_without_A_list.push(Cx_without_a);
+            X_clone.insert(A);
         }
 
         let mut C_for_X = BitSet::new();
@@ -120,6 +144,7 @@ fn compute_dependencies(level0: &mut HashMap::<BitSet, Combiantion>, level1: &mu
 
                 if spX.get_error() == spX_without_A.get_error() {
                     let X_without_A = X_clone.clone();
+                    // println!("X: {:?}, X/A: {:?} \t X/A: {:?}", spX, spX_without_A, X_without_A);
                     res.add_from_index(&X_without_A.iter().map(|x| x - 1).collect(), A - 1);
 
                     ch.rhs.remove(A);
@@ -138,8 +163,9 @@ fn compute_dependencies(level0: &mut HashMap::<BitSet, Combiantion>, level1: &mu
 }
 
 fn prune(level1: HashMap::<BitSet, Combiantion>, attri_num: usize, res: &mut FDs) -> HashMap::<BitSet, Combiantion> {
+    let level1_ptr = &level1 as *const HashMap<BitSet, Combiantion>;
     let level1 = RefCell::new(level1);
-    
+
     let mut element_to_remove = Vec::new();
 
     for (x, ch) in level1.borrow_mut().iter_mut() {
@@ -162,17 +188,20 @@ fn prune(level1: HashMap::<BitSet, Combiantion>, attri_num: usize, res: &mut FDs
 
                 for b in x.iter() {
                     x_union_a_without_b.remove(b);
-                    if let Some(c) = level1.borrow().get(&x_union_a_without_b) {
-                        intersect.intersect_with(&c.rhs);
-                    } else {
-                        intersect = BitSet::new();
-                        break;
+                    unsafe {
+                        if let Some(c) = (*level1_ptr).get(&x_union_a_without_b) {
+                            intersect.intersect_with(&c.rhs);
+                        } else {
+                            intersect = BitSet::new();
+                            break;
+                        }
                     }
-
                     x_union_a_without_b.insert(b);
                 }
+
                 if intersect.contains(a) {
                     let lhs = x.clone();
+                    // println!("rhs/X: {:?}, inter: {:?} \t lhs: {:?}", rhs_without_x, intersect, lhs);
                     res.add_from_index(&lhs.iter().map(|x| x - 1).collect(), a - 1);
                     ch.rhs.remove(a);
                     ch.kill();
@@ -241,9 +270,8 @@ fn generate_next_level(level1: HashMap::<BitSet, Combiantion>) -> (HashMap::<Bit
             if check {
                 if level1.get(&a).unwrap().is_valid() && level1.get(&b).unwrap().is_valid() {
                     let st = &level1.get(&a).unwrap().partition * &level1.get(&b).unwrap().partition;
-                    let rhs = BitSet::new();
                     new_level.insert(X, Combiantion { 
-                        rhs: rhs, partition: st, valid: true 
+                        rhs: BitSet::new(), partition: st, valid: true 
                     });
                 } else {
                     new_level.insert(X, Combiantion {
